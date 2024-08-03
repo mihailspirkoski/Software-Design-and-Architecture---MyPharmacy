@@ -1,6 +1,6 @@
 # Software-Design-and-Architecture---MyPharmacy
 
-ASP .NET Core Razor Pages Application for discovering pharmacies nearby using PostgreSQL database and Bootstrap
+ASP .NET Core Razor Pages Application for discovering pharmacies nearby using PostgreSQL database, Bootstrap, and Open Layers library
 
 **__Description/Functionalities__**
 
