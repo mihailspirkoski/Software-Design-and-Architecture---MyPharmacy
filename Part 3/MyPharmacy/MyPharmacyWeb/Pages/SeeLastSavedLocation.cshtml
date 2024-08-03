@@ -1,0 +1,156 @@
+﻿@page
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject IHttpContextAccessor HttpContextAccessor
+@model MyPharmacyWeb.Pages.SeeLastSavedLocationModel
+@{
+    var distance = TempData["Distance"];
+    var longitude = TempData["Longitude"];
+    var lattitude = TempData["Lattitude"];
+    var clongitude = TempData["CLongitude"];
+    var clattitude = TempData["CLattitude"];
+    var time = TempData["Time"];
+    var name = TempData["Name"];
+}
+
+<div class="container text-center">
+    <div class="row mt-5">
+        <h1 hidden>Keep it hidden</h1>
+    </div>
+    <div class="row mt-5">
+        <div class="col-5">
+            <div class="row  bg-danger text-light">
+                <h6 class="mt-4 fw-bold">@DateTimeOffset.Now</h6>
+                <h6 class="mb-4 fw-bold">@DateTime.UtcNow.DayOfWeek</h6>
+            </div>
+        </div>
+        <div class="col-2">
+            <p hidden> ne </p>
+        </div>
+        <div class="col-5">
+            <div class="row bg-danger text-light">
+                <a class="btn btn-danger btn-outline-danger text-light fw-bold mt-2" href="/SeeLastSavedLocation">Hello @UserManager.GetUserName(User)</a>
+                <a class="btn btn-danger btn-outline-danger text-light fw-bold mb-2" href="/Identity/Account/Logout">Logout</a>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-1">
+        <h1 hidden>Keep it hidden</h1>
+    </div>
+    <div class="row mt-5">
+        <div class="col-7">
+            <div id="map" class="map" style="height: 500px; width: 100%; border: 1px black solid;">
+            </div>
+        </div>
+        <div class="col-1">
+            <h1 hidden>Keep it hidden</h1>
+        </div>
+        <div class="col-4">
+            @{
+                var dist = @Convert.ToDouble(distance);
+            }
+            <p class="mt-5"> <img src="/images/square.png" class="img-responsive" /> <b>-</b> This indicates your location</p>
+            <p> <img src="/images/marker.png" class="img-responsive" /> <b>-</b> This indicates your pharmacy's location</p>
+            <p> <b>@name - Distance : @Convert.ToInt32(dist) km on @time UTC time </b></p>
+            <p> <img src="/images/walk.png" class="img-responsive" /> <b>-</b> @Convert.ToInt32(dist * 10) mins of walking</p>
+            <p> <img src="/images/cycle.png" class="img-responsive" /> <b>-</b> @Convert.ToInt32(dist * 5) mins of cycling</p>
+            <p> <img src="/images/drive.png" class="img-responsive" /> <b>-</b> @Convert.ToInt32(dist * 1) mins of driving</p>
+
+            <div class="mt-5">
+                <p>
+                    <a class="link-dark" href="/Index">Go back to Index</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-1">
+        <h1 hidden>Keep it hidden</h1>
+    </div>
+    <div class="row mt-5">
+    </div>
+</div>
+
+
+
+@section Scripts {
+
+    <script>
+
+        const source = new ol.source.OSM();
+
+        const layer = new ol.layer.Tile({
+            source: source,
+        });
+
+        const view = new ol.View({
+            center: [2417589.3727651197, 5096557.619844842],
+            zoom: 8.3,
+        });
+
+        const markerStyle = new ol.style.Style({
+            image: new ol.style.Icon({
+                anchor: [0.5, 1],
+                src: '/images/marker.png',
+            }),
+        });
+
+        const squareStyle = new ol.style.Style({
+            image: new ol.style.Icon({
+                anchor: [0.5, 1],
+                src: '/images/square.png',
+            }),
+        });
+
+
+        const iconsSource = new ol.source.Vector({
+            features: [],
+        });
+
+        // parseFloat(coordinateX[i].replace(",", "."))
+
+        var x = '@longitude';
+        var coordinateX = parseFloat(x.replace(",", "."));
+
+        var y = '@lattitude';
+        var coordinateY = parseFloat(y.replace(",", "."));
+
+        var cx = '@clongitude';
+        var coordinateCX = parseFloat(cx.replace(",", "."));
+
+        var cy = '@clattitude';
+        var coordinateCY = parseFloat(cy.replace(",", "."));
+
+
+
+        const markerFeature = new ol.Feature({
+            geometry: new ol.geom.Point(ol.proj.fromLonLat([coordinateX, coordinateY])),
+            name: "Marker",
+        });
+
+        const squareFeature = new ol.Feature({
+            geometry: new ol.geom.Point(ol.proj.fromLonLat([coordinateCX, coordinateCY])),
+            name: "Square",
+        });
+
+        markerFeature.setStyle(markerStyle);
+        squareFeature.setStyle(squareStyle);
+
+        iconsSource.addFeature(markerFeature);
+        iconsSource.addFeature(squareFeature);
+
+        const iconsLayer = new ol.layer.Vector({
+            source: iconsSource,
+        });
+
+
+        const map = new ol.Map({
+            target: 'map',
+            layers: [layer, iconsLayer],
+            view: view,
+            controls: [],
+        });
+
+    </script>
+}

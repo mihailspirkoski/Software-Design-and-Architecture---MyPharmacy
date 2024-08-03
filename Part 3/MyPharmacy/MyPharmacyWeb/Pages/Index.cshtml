@@ -1,0 +1,192 @@
+﻿@page
+@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject IHttpContextAccessor HttpContextAccessor
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+    
+
+    //Extract the model values needed for the shop locations on the map (as strings)
+    var longitude = "";
+    var latitude = "";
+
+    for (int i = 0; i < Model.pharmacies.Count; i++)
+    {
+        longitude += Model.pharmacies.ElementAt(i).lon;
+        longitude += "*";
+        latitude += Model.pharmacies.ElementAt(i).lat;
+        latitude += "*";
+    }
+
+}
+
+<div class="container text-center">
+    <div class="row mt-5">
+        <h1 hidden>Keep it hidden</h1>
+    </div>
+    <div class="row mt-5">
+        <div class="col-5">
+            <div class="row  bg-danger text-light">
+                <h6 class="mt-4 fw-bold">@DateTimeOffset.Now</h6>
+                <h6 class="mb-4 fw-bold">@DateTime.UtcNow.DayOfWeek</h6>
+            </div>
+        </div>
+        <div class="col-2">
+            <p hidden> ne </p>
+        </div>
+        <div class="col-5">
+            @if (!SignInManager.IsSignedIn(User))
+            {
+                <div class="row bg-danger text-light">
+                    <a class="btn btn-danger btn-outline-danger text-light fw-bold mt-2" href="/Identity/Account/Login">Login</a>
+                    <a class="btn btn-danger btn-outline-danger text-light fw-bold mb-2" href="/Identity/Account/Register">Register</a>
+                </div>
+            }
+            else
+            {
+                <div class="row bg-danger text-light">
+                    <a class="btn btn-danger btn-outline-danger text-light fw-bold mt-2" href="/SeeLastSavedLocation">Hello @UserManager.GetUserName(User)</a>
+                    <a class="btn btn-danger btn-outline-danger text-light fw-bold mb-2" href="/Identity/Account/Logout">Logout</a>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="row mt-1">
+        <h1 hidden>Keep it hidden</h1>
+    </div>
+    <div class="row mt-5">
+        <div class="col-2">
+            <h1 hidden>Keep it hidden</h1>
+        </div>
+        <div class="col-8">
+            @if (SignInManager.IsSignedIn(User))
+            {
+                @* <a class="btn btn-danger btn-outline-danger btn-lg text-light  mt-5" href="/UserActions/FindNearbyPharmacy">Find nearby pharmacy</a> *@
+                <form method="post" class="row">
+                    <input hidden asp-for="pharmacies" />
+                    <input hidden asp-for="distance" id="distance" type="number" min="0" step="0.0000000000000001" value="" />
+                    <input hidden asp-for="longitude" id="long" type="number" min="0" step="0.0000000000000001" value="" />
+                    <input hidden asp-for="lattitude" id="latt" type="number" min="0" step="0.0000000000000001" value="" />
+                    <input hidden asp-for="clongitude" id="clong" type="number" min="0" step="0.0000000000000001" value="" />
+                    <input hidden asp-for="clattitude" id="clatt" type="number" min="0" step="0.0000000000000001" value="" />
+                    <button type="submit" class="btn btn-danger btn-outline-danger btn-lg text-light  mt-5">Find nearby pharmacy</button>
+                </form>
+                <div>
+                    <label for="track">
+                        Enable Location Sharing
+                        <input id="track" type="checkbox" />
+                    </label>
+                </div>
+                
+            }
+            else
+            {
+                <p class="fw-bold mt-5">Please sign in or register in order to use our services</p>
+            }
+        </div>
+        <div class="col-2">
+            <h1 hidden>Keep it hidden</h1>
+        </div>
+    </div>
+</div>
+<div hidden id="map" class="map" style="height: 500px; width: 100%; border: 1px black solid;">
+
+</div>
+
+
+
+
+
+
+@section Scripts{
+    
+    <script>
+
+        //Map the model values to js variables and parse them to their respective type + deletion of unnecessary string values
+        var coordinateX = '@Html.Raw(longitude)'.split("*");
+        coordinateX.splice(coordinateX.indexOf(""), 1);
+
+        var coordinateY = '@Html.Raw(latitude)'.split("*");
+        coordinateY.splice(coordinateY.indexOf(""), 1);
+
+        var currLon = 0;
+        var currLat = 0;
+
+        let distanceBetweenPoints = 0;
+        let minDistance = 1000000;
+
+        const source = new ol.source.OSM();
+
+        const layer = new ol.layer.Tile({
+            source: source,
+        });
+
+        const view = new ol.View({
+            center: [2417589.3727651197, 5096557.619844842],
+            zoom: 8.3,
+        });
+
+        const map = new ol.Map({
+            target: 'map',
+            layers: [layer],
+            view: view,
+        });
+
+        const geolocation = new ol.Geolocation({
+            // enableHighAccuracy must be set to true to have the heading value.
+            trackingOptions: {
+                enableHighAccuracy: true,
+            },
+            projection: view.getProjection(),
+        });
+
+        function el(id) {
+            return document.getElementById(id);
+        }
+
+        el('track').addEventListener('change', function () {
+            geolocation.setTracking(this.checked);
+        });
+
+        geolocation.on('change', function () {
+             currLon = geolocation.position_[0];
+             currLat = geolocation.position_[1];
+
+            document.getElementById('clong').value = currLon;
+            document.getElementById('clatt').value = currLat;
+
+            for (var i = 0; i < coordinateX.length; i++) {  //parseFloat("17,77".replace(",","."));
+
+                var longi = parseFloat(coordinateX[i].replace(",", "."));
+                var latti = parseFloat(coordinateY[i].replace(",", "."));
+
+
+
+                distance = ol.sphere.getDistance([currLon, currLat], [longi, latti]) / 1000;
+
+                if (distance < minDistance) {
+
+                    minDistance = distance;
+
+                    document.getElementById('distance').value = parseFloat(minDistance);
+                    document.getElementById('long').value = longi;
+                    document.getElementById('latt').value = latti;
+
+                }
+            }
+        });
+
+        // handle geolocation error.
+        geolocation.on('error', function (error) {
+            const info = document.getElementById('info');
+            info.innerHTML = error.message;
+            info.style.display = '';
+        });
+
+
+
+    </script>
+}
