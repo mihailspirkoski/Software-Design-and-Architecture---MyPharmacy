@@ -1,3 +1,5 @@
+# Software-Design-and-Architecture---MyPharmacy
+
 Application for discovering pharmacies nearby
 
 Description/Functionalities
