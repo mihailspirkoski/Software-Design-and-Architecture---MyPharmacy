@@ -33,5 +33,5 @@ Part 3 - Application - allows users to find pharmacies nearby by using their cur
 
 1. Download or clone the repository (Download ZIP or `git clone` )
 2. Open the project solution
-3. Admin credentials - User: admin@aadmin.com; Password: Admin123*
+3. Admin credentials - User: admin@admin.com; Password: Admin123*
 
